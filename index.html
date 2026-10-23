@@ -1,217 +1,471 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Talk to Yassine</title>
+<title>Darija Voice Bot 🇲🇦</title>
+
 <style>
-  body {
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: linear-gradient(135deg, #101827, #243b55);
-    font-family: Arial, sans-serif;
-    color: white;
-  }
-  .bot {
-    width: 320px;
-    max-width: 85%;
-    padding: 28px;
-    border-radius: 24px;
-    background: #ffffff12;
-    border: 1px solid #ffffff25;
-    text-align: center;
-    box-shadow: 0 15px 50px #0005;
-  }
-  .avatar {
-    font-size: 65px;
-    margin-bottom: 10px;
-  }
-  h2 { margin: 8px 0; }
-  #status {
-    color: #b9d5f5;
-    min-height: 22px;
-    font-size: 14px;
-  }
-  #message {
-    margin: 20px 0;
-    min-height: 50px;
-    line-height: 1.7;
-    overflow-wrap: anywhere;
-  }
-  button {
-    border: none;
-    border-radius: 30px;
-    padding: 14px 20px;
-    margin: 5px;
-    font-size: 15px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  #talk {
-    background: #36d399;
-    color: #10251e;
-  }
-  #stop {
-    background: #ff647c;
-    color: white;
-  }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #10152d, #192c4c, #352052);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+
+.container {
+  width: 100%;
+  max-width: 650px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 20px 60px #0005;
+  backdrop-filter: blur(16px);
+}
+
+header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.flag {
+  font-size: 42px;
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 29px;
+  margin-bottom: 9px;
+}
+
+h1 span {
+  color: #63e6be;
+}
+
+.subtitle {
+  color: #c0c9df;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+label {
+  display: block;
+  margin: 18px 0 9px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #e6eaff;
+}
+
+textarea, select {
+  width: 100%;
+  background: #111a32;
+  color: white;
+  border: 1px solid #384968;
+  border-radius: 12px;
+  padding: 14px;
+  outline: none;
+  font-size: 15px;
+}
+
+textarea {
+  min-height: 155px;
+  resize: vertical;
+  line-height: 1.8;
+}
+
+textarea:focus, select:focus {
+  border-color: #63e6be;
+}
+
+textarea::placeholder {
+  color: #8794b0;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.control-box {
+  background: #111a32;
+  padding: 13px;
+  border-radius: 12px;
+  border: 1px solid #293956;
+}
+
+.control-box label {
+  margin: 0 0 10px;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #63e6be;
+  cursor: pointer;
+}
+
+.range-value {
+  color: #63e6be;
+  font-size: 13px;
+  margin-top: 7px;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 14px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+button:active {
+  transform: scale(.98);
+}
+
+.primary {
+  background: #63e6be;
+  color: #10241f;
+}
+
+.secondary {
+  background: #283956;
+  color: white;
+}
+
+.stop {
+  background: #512c49;
+  color: #ffc4dc;
+}
+
+.status {
+  margin-top: 20px;
+  border-radius: 12px;
+  background: #101a30;
+  padding: 13px;
+  color: #a9bad7;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.status.active {
+  color: #63e6be;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 20px;
+  color: #8492b1;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+@media (max-width: 450px) {
+  .container { padding: 20px; }
+  h1 { font-size: 24px; }
+  .controls { grid-template-columns: 1fr; }
+}
 </style>
 </head>
-<body>
 
-<div class="bot">
-  <div class="avatar">🎙️</div>
-  <h2>Yassine AI</h2>
-  <p>المساعد ديالك بالدارجة المغربية</p>
-  <div id="status">ضغط على الزر و بدا الهضرة</div>
-  <div id="message">مرحبا بيك! أنا ياسين، كيفاش نقدر نعاونك؟</div>
-  <button id="talk">🎤 هضر معايا</button>
-  <button id="stop">⏹ وقف</button>
-</div>
+<body>
+<main class="container">
+
+  <header>
+    <div class="flag">🇲🇦 🎙️</div>
+    <h1>Darija <span>Voice Bot</span></h1>
+    <p class="subtitle">
+      كتب النص ديالك بالدارجة المغربية وخليه يهضر بالصوت!
+      <br>
+      Write your Moroccan Darija text and listen to it.
+    </p>
+  </header>
+
+  <label for="text">Your Darija text / النص ديالك</label>
+  <textarea id="text" dir="auto"
+    placeholder="سلام، كيداير؟ مرحبا بيك فالبوت ديال الصوت المغربي..."></textarea>
+
+  <div class="controls">
+    <div>
+      <label for="voice">Choose voice / الصوت</label>
+      <select id="voice">
+        <option value="">Loading voices...</option>
+      </select>
+    </div>
+
+    <div>
+      <label for="language">Voice preference</label>
+      <select id="language">
+        <option value="all">All available voices</option>
+        <option value="ar">Arabic voices</option>
+        <option value="fr">French voices</option>
+        <option value="en">English voices</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="control-box">
+      <label for="speed">Speaking speed</label>
+      <input id="speed" type="range"
+        min="0.5" max="1.5" value="0.9" step="0.1">
+      <div class="range-value" id="speedValue">0.9x</div>
+    </div>
+
+    <div class="control-box">
+      <label for="pitch">Voice pitch</label>
+      <input id="pitch" type="range"
+        min="0.5" max="1.5" value="1" step="0.1">
+      <div class="range-value" id="pitchValue">1.0</div>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button class="primary" id="play">▶ Generate Voice</button>
+    <button class="secondary" id="pause">⏸ Pause</button>
+    <button class="secondary" id="resume">▶ Resume</button>
+    <button class="stop" id="stop">⏹ Stop</button>
+    <button class="secondary" id="copy">📋 Copy Text</button>
+    <button class="secondary" id="clear">🗑 Clear</button>
+  </div>
+
+  <div class="status" id="status" role="status" aria-live="polite">
+    Ready! Enter your Darija text to begin.
+  </div>
+
+  <div class="footer">
+    Made for Moroccan Darija 🇲🇦<br>
+    Uses the voices available on your device or browser.
+  </div>
+</main>
 
 <script>
-(function () {
-  const status = document.getElementById("status");
-  const message = document.getElementById("message");
-  const talk = document.getElementById("talk");
-  const stop = document.getElementById("stop");
+const textInput = document.getElementById("text");
+const voiceSelect = document.getElementById("voice");
+const languageSelect = document.getElementById("language");
+const speedInput = document.getElementById("speed");
+const pitchInput = document.getElementById("pitch");
+const statusBox = document.getElementById("status");
 
-  const SpeechRecognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
+let voices = [];
+let currentUtterance = null;
+let runId = 0;
 
-  let recognition;
-  let speaking = false;
+function setStatus(message, active = false) {
+  statusBox.textContent = message;
+  statusBox.classList.toggle("active", active);
+}
 
-  function speak(text) {
-    if (!("speechSynthesis" in window)) {
-      status.textContent = "الصوت ما مدعومش فهاد المتصفح";
-      return;
-    }
+function loadVoices() {
+  if (!("speechSynthesis" in window)) {
+    setStatus("Sorry, your browser does not support speech synthesis.");
+    document.getElementById("play").disabled = true;
+    return;
+  }
 
-    speechSynthesis.cancel();
-    speaking = true;
+  voices = window.speechSynthesis.getVoices();
+  updateVoiceOptions();
+}
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voices = speechSynthesis.getVoices();
+function updateVoiceOptions() {
+  const previous = voiceSelect.value;
+  const preference = languageSelect.value;
 
-    // Prefer an Arabic voice, otherwise use the default voice.
-    const voice = voices.find(v =>
-      /^ar([-_]|$)/i.test(v.lang)
+  const filtered = voices.filter(voice => {
+    if (preference === "all") return true;
+    return voice.lang.toLowerCase().startsWith(
+      preference.toLowerCase()
     );
-
-    if (voice) {
-      utterance.voice = voice;
-      utterance.lang = voice.lang;
-    } else {
-      utterance.lang = "ar-MA";
-    }
-
-    utterance.rate = 0.9;
-    utterance.pitch = 0.95;
-
-    utterance.onend = () => {
-      speaking = false;
-      status.textContent = "واجد نسمع ليك";
-    };
-
-    utterance.onerror = () => {
-      speaking = false;
-      status.textContent = "تقدر تكمل بالكتابة أو تجرب مرة أخرى";
-    };
-
-    speechSynthesis.speak(utterance);
-  }
-
-  function reply(text) {
-    const input = text.toLowerCase().trim();
-    let answer;
-
-    if (/سلام|السلام|salam|slt|hello|bonjour/.test(input)) {
-      answer = "وعليكم السلام! مرحبا بيك، كيداير؟ شنو نقدر ندير ليك؟";
-    } else if (/سميتك|شكون نتا|اسمك|your name/.test(input)) {
-      answer = "أنا ياسين، المساعد الافتراضي ديالك. فرحان نهضر معاك!";
-    } else if (/كيف داير|كيداير|لاباس|كيف حالك/.test(input)) {
-      answer = "الحمد لله، كلشي بخير! ونتا كيداير؟";
-    } else if (/شكرا|شكراً|merci|thank/.test(input)) {
-      answer = "بلا جميل! أنا هنا إلا احتاجيتي شي حاجة.";
-    } else if (/فلوس|المال|money|خدمة|العمل/.test(input)) {
-      answer = "باش تنجح، حدد الهدف ديالك، تعلم مهارة جديدة، ونظم وقتك وفلوسك. شنو بالضبط بغيتي تعرف؟";
-    } else if (/ضحكني|نكتة|نكت|joke/.test(input)) {
-      answer = "واحد مشى للطبيب قال ليه: دكتور، كننسى بزاف! قال ليه الطبيب: من إمتى؟ قال ليه: من إمتى شنو؟";
-    } else if (/باي|بسلامة|مع السلامة|bye/.test(input)) {
-      answer = "الله يسهل عليك! نهارك مبروك، ومرحبا بيك أي وقت.";
-    } else {
-      answer = "فهمتك، ولكن باقي ما عنديش الذكاء باش نجاوب على أي سؤال. جرب تسولني على السلام، الخدمة، الفلوس، ولا عاود قول ليا السؤال بطريقة أخرى.";
-    }
-
-    message.textContent = answer;
-    speak(answer);
-  }
-
-  function listen() {
-    if (!SpeechRecognition) {
-      status.textContent =
-        "التعرف على الصوت ما مدعومش. جرب Chrome أو Edge.";
-      return;
-    }
-
-    if (speaking) speechSynthesis.cancel();
-    speaking = false;
-
-    recognition = new SpeechRecognition();
-    recognition.lang = "ar-MA";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
-      status.textContent = "كنسمع ليك دابا...";
-      talk.disabled = true;
-    };
-
-    recognition.onresult = event => {
-      const heard = event.results[0][0].transcript;
-      message.textContent = "نتا: " + heard;
-      reply(heard);
-    };
-
-    recognition.onerror = event => {
-      status.textContent = event.error === "not-allowed"
-        ? "سمح للمتصفح يستعمل الميكروفون"
-        : "ما سمعتكش مزيان، عاود جرب";
-    };
-
-    recognition.onend = () => {
-      talk.disabled = false;
-    };
-
-    try {
-      recognition.start();
-    } catch (error) {
-      talk.disabled = false;
-      status.textContent = "عاود ضغط على الزر";
-    }
-  }
-
-  talk.addEventListener("click", listen);
-
-  stop.addEventListener("click", () => {
-    if (recognition) recognition.abort();
-    if ("speechSynthesis" in window) speechSynthesis.cancel();
-    speaking = false;
-    talk.disabled = false;
-    status.textContent = "وقفنا الصوت. ضغط باش تعاود.";
   });
 
-  if ("speechSynthesis" in window) {
-    speechSynthesis.onvoiceschanged = () => {};
-  }
-})();
-</script>
+  voiceSelect.innerHTML = "";
 
+  if (!filtered.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "No matching voices available";
+    voiceSelect.appendChild(option);
+    return;
+  }
+
+  filtered.forEach(voice => {
+    const option = document.createElement("option");
+    option.value = voices.indexOf(voice);
+    option.textContent = `${voice.name} (${voice.lang})`;
+    voiceSelect.appendChild(option);
+  });
+
+  if (filtered.some(v => String(voices.indexOf(v)) === previous)) {
+    voiceSelect.value = previous;
+  } else {
+    const preferred = filtered.find(v =>
+      v.lang.toLowerCase().startsWith("ar")
+    );
+    voiceSelect.value = String(
+      voices.indexOf(preferred || filtered[0])
+    );
+  }
+}
+
+function stopSpeech() {
+  runId++;
+  window.speechSynthesis.cancel();
+  currentUtterance = null;
+}
+
+function generateVoice() {
+  const content = textInput.value.trim();
+
+  if (!content) {
+    setStatus("Please enter some Darija text first.");
+    textInput.focus();
+    return;
+  }
+
+  if (!("speechSynthesis" in window)) {
+    setStatus("Speech synthesis is not supported by this browser.");
+    return;
+  }
+
+  stopSpeech();
+  const thisRun = runId;
+
+  const utterance = new SpeechSynthesisUtterance(content);
+  const selectedVoice = voices[Number(voiceSelect.value)];
+
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+    utterance.lang = selectedVoice.lang;
+  } else {
+    utterance.lang = "ar-MA";
+  }
+
+  utterance.rate = Number(speedInput.value);
+  utterance.pitch = Number(pitchInput.value);
+
+  utterance.onstart = () => {
+    if (thisRun !== runId) return;
+    setStatus("🔊 Speaking your text...", true);
+  };
+
+  utterance.onend = () => {
+    if (thisRun !== runId) return;
+    currentUtterance = null;
+    setStatus("✅ Finished speaking!");
+  };
+
+  utterance.onerror = event => {
+    if (thisRun !== runId) return;
+    currentUtterance = null;
+    if (event.error !== "canceled" && event.error !== "interrupted") {
+      setStatus("Could not play this voice. Try another available voice.");
+    }
+  };
+
+  currentUtterance = utterance;
+  window.speechSynthesis.speak(utterance);
+}
+
+document.getElementById("play").addEventListener("click", generateVoice);
+
+document.getElementById("pause").addEventListener("click", () => {
+  if (window.speechSynthesis.speaking &&
+      !window.speechSynthesis.paused) {
+    window.speechSynthesis.pause();
+    setStatus("⏸ Speech paused.");
+  } else {
+    setStatus("There is no active speech to pause.");
+  }
+});
+
+document.getElementById("resume").addEventListener("click", () => {
+  if (window.speechSynthesis.paused) {
+    window.speechSynthesis.resume();
+    setStatus("▶ Resuming speech...", true);
+  } else {
+    setStatus("Speech is not paused.");
+  }
+});
+
+document.getElementById("stop").addEventListener("click", () => {
+  stopSpeech();
+  setStatus("⏹ Speech stopped.");
+});
+
+document.getElementById("copy").addEventListener("click", async () => {
+  const content = textInput.value;
+
+  if (!content.trim()) {
+    setStatus("There is no text to copy.");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(content);
+    setStatus("📋 Text copied successfully!");
+  } catch {
+    textInput.focus();
+    textInput.select();
+    const copied = document.execCommand("copy");
+    setStatus(copied
+      ? "📋 Text copied!"
+      : "Select the text and copy it manually.");
+  }
+});
+
+document.getElementById("clear").addEventListener("click", () => {
+  stopSpeech();
+  textInput.value = "";
+  setStatus("Text cleared. Ready for new text.");
+  textInput.focus();
+});
+
+speedInput.addEventListener("input", () => {
+  document.getElementById("speedValue").textContent =
+    Number(speedInput.value).toFixed(1) + "x";
+});
+
+pitchInput.addEventListener("input", () => {
+  document.getElementById("pitchValue").textContent =
+    Number(pitchInput.value).toFixed(1);
+});
+
+languageSelect.addEventListener("change", updateVoiceOptions);
+
+if ("speechSynthesis" in window) {
+  loadVoices();
+  window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+} else {
+  setStatus("Your browser does not support speech synthesis.");
+  document.getElementById("play").disabled = true;
+}
+</script>
 </body>
 </html>
+
