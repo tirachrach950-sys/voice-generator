@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talk to Yassine</title>
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #101827, #243b55);
+    font-family: Arial, sans-serif;
+    color: white;
+  }
+  .bot {
+    width: 320px;
+    max-width: 85%;
+    padding: 28px;
+    border-radius: 24px;
+    background: #ffffff12;
+    border: 1px solid #ffffff25;
+    text-align: center;
+    box-shadow: 0 15px 50px #0005;
+  }
+  .avatar {
+    font-size: 65px;
+    margin-bottom: 10px;
+  }
+  h2 { margin: 8px 0; }
+  #status {
+    color: #b9d5f5;
+    min-height: 22px;
+    font-size: 14px;
+  }
+  #message {
+    margin: 20px 0;
+    min-height: 50px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+  }
+  button {
+    border: none;
+    border-radius: 30px;
+    padding: 14px 20px;
+    margin: 5px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  #talk {
+    background: #36d399;
+    color: #10251e;
+  }
+  #stop {
+    background: #ff647c;
+    color: white;
+  }
+</style>
+</head>
+<body>
+
+<div class="bot">
+  <div class="avatar">🎙️</div>
+  <h2>Yassine AI</h2>
+  <p>المساعد ديالك بالدارجة المغربية</p>
+  <div id="status">ضغط على الزر و بدا الهضرة</div>
+  <div id="message">مرحبا بيك! أنا ياسين، كيفاش نقدر نعاونك؟</div>
+  <button id="talk">🎤 هضر معايا</button>
+  <button id="stop">⏹ وقف</button>
+</div>
+
+<script>
+(function () {
+  const status = document.getElementById("status");
+  const message = document.getElementById("message");
+  const talk = document.getElementById("talk");
+  const stop = document.getElementById("stop");
+
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+  let recognition;
+  let speaking = false;
+
+  function speak(text) {
+    if (!("speechSynthesis" in window)) {
+      status.textContent = "الصوت ما مدعومش فهاد المتصفح";
+      return;
+    }
+
+    speechSynthesis.cancel();
+    speaking = true;
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voices = speechSynthesis.getVoices();
+
+    // Prefer an Arabic voice, otherwise use the default voice.
+    const voice = voices.find(v =>
+      /^ar([-_]|$)/i.test(v.lang)
+    );
+
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+    } else {
+      utterance.lang = "ar-MA";
+    }
+
+    utterance.rate = 0.9;
+    utterance.pitch = 0.95;
+
+    utterance.onend = () => {
+      speaking = false;
+      status.textContent = "واجد نسمع ليك";
+    };
+
+    utterance.onerror = () => {
+      speaking = false;
+      status.textContent = "تقدر تكمل بالكتابة أو تجرب مرة أخرى";
+    };
+
+    speechSynthesis.speak(utterance);
+  }
+
+  function reply(text) {
+    const input = text.toLowerCase().trim();
+    let answer;
+
+    if (/سلام|السلام|salam|slt|hello|bonjour/.test(input)) {
+      answer = "وعليكم السلام! مرحبا بيك، كيداير؟ شنو نقدر ندير ليك؟";
+    } else if (/سميتك|شكون نتا|اسمك|your name/.test(input)) {
+      answer = "أنا ياسين، المساعد الافتراضي ديالك. فرحان نهضر معاك!";
+    } else if (/كيف داير|كيداير|لاباس|كيف حالك/.test(input)) {
+      answer = "الحمد لله، كلشي بخير! ونتا كيداير؟";
+    } else if (/شكرا|شكراً|merci|thank/.test(input)) {
+      answer = "بلا جميل! أنا هنا إلا احتاجيتي شي حاجة.";
+    } else if (/فلوس|المال|money|خدمة|العمل/.test(input)) {
+      answer = "باش تنجح، حدد الهدف ديالك، تعلم مهارة جديدة، ونظم وقتك وفلوسك. شنو بالضبط بغيتي تعرف؟";
+    } else if (/ضحكني|نكتة|نكت|joke/.test(input)) {
+      answer = "واحد مشى للطبيب قال ليه: دكتور، كننسى بزاف! قال ليه الطبيب: من إمتى؟ قال ليه: من إمتى شنو؟";
+    } else if (/باي|بسلامة|مع السلامة|bye/.test(input)) {
+      answer = "الله يسهل عليك! نهارك مبروك، ومرحبا بيك أي وقت.";
+    } else {
+      answer = "فهمتك، ولكن باقي ما عنديش الذكاء باش نجاوب على أي سؤال. جرب تسولني على السلام، الخدمة، الفلوس، ولا عاود قول ليا السؤال بطريقة أخرى.";
+    }
+
+    message.textContent = answer;
+    speak(answer);
+  }
+
+  function listen() {
+    if (!SpeechRecognition) {
+      status.textContent =
+        "التعرف على الصوت ما مدعومش. جرب Chrome أو Edge.";
+      return;
+    }
+
+    if (speaking) speechSynthesis.cancel();
+    speaking = false;
+
+    recognition = new SpeechRecognition();
+    recognition.lang = "ar-MA";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      status.textContent = "كنسمع ليك دابا...";
+      talk.disabled = true;
+    };
+
+    recognition.onresult = event => {
+      const heard = event.results[0][0].transcript;
+      message.textContent = "نتا: " + heard;
+      reply(heard);
+    };
+
+    recognition.onerror = event => {
+      status.textContent = event.error === "not-allowed"
+        ? "سمح للمتصفح يستعمل الميكروفون"
+        : "ما سمعتكش مزيان، عاود جرب";
+    };
+
+    recognition.onend = () => {
+      talk.disabled = false;
+    };
+
+    try {
+      recognition.start();
+    } catch (error) {
+      talk.disabled = false;
+      status.textContent = "عاود ضغط على الزر";
+    }
+  }
+
+  talk.addEventListener("click", listen);
+
+  stop.addEventListener("click", () => {
+    if (recognition) recognition.abort();
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
+    speaking = false;
+    talk.disabled = false;
+    status.textContent = "وقفنا الصوت. ضغط باش تعاود.";
+  });
+
+  if ("speechSynthesis" in window) {
+    speechSynthesis.onvoiceschanged = () => {};
+  }
+})();
+</script>
+
+</body>
+</html>
