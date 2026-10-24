@@ -5,7 +5,7 @@
 2. Choose **Membership**.
 3. Fill in:
    - **Name:** Voxwright Pro: unlimited audio bot voices
-   - **Price:** $3.99, billed **monthly**
+   - **Price:** $3.99 per **month**. Then in the pricing options also turn on **yearly** at **$39.99** (about 16% off). The Yearly button on your site opens that option.
    - **URL slug:** voxwright
    - **Description:** paste the text below.
 4. Open the **Content** tab and turn on **Generate a unique license key per sale**.
@@ -17,13 +17,13 @@
 Turn any text into a natural spoken audio bot, in minutes.
 
 Voxwright Pro gives you:
-- Unlimited listening and unlimited script length
+- Unlimited listening, MP3 audio downloads and unlimited script length
 - Neural voices in English, French, Spanish, Arabic and more
 - Male and female voices with accent choice
 - Embed code to add your bot to any website
 - Cancel anytime
 
-Try two listens free before you subscribe.
+Try two listens or downloads free before you subscribe. Monthly $3.99 or yearly $39.99.
 
 ## 2. Find your Product ID
 Expand the **License key** section on the product's Content page. The Product ID is shown there.
