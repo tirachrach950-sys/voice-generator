@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voxwright – Audio bot generator (neural)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f1f3f9; --surface:#ffffff; --ink:#151b3a; --muted:#5a6285; --line:#d9ddec;
+  --brand:#3b47d4; --brand-ink:#ffffff; --live:#12a594; --soft:#e4e7fb;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#10142b; --surface:#181d3d; --ink:#eceffd; --muted:#9aa3cc; --line:#2b3260;
+    --brand:#7f8bff; --brand-ink:#10142b; --live:#38d6c2; --soft:#232a57;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#10142b; --surface:#181d3d; --ink:#eceffd; --muted:#9aa3cc; --line:#2b3260;
+  --brand:#7f8bff; --brand-ink:#10142b; --live:#38d6c2; --soft:#232a57;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2,h3{font-family:"Bricolage Grotesque","Instrument Sans",system-ui,sans-serif;line-height:1.08;margin:0;letter-spacing:-.02em}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+header.top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:22px 0}
+.logo{display:flex;align-items:center;gap:10px;font:700 21px "Bricolage Grotesque",sans-serif;text-decoration:none}
+.logo svg{width:30px;height:30px}
+nav a{margin-inline-start:24px;text-decoration:none;color:var(--muted);font-weight:500}
+nav a:hover{color:var(--ink)}
+.hero{display:grid;grid-template-columns:1fr 1.1fr;gap:56px;align-items:start;padding:40px 0 88px}
+.hero h1{font-size:clamp(40px,5.6vw,68px);font-weight:700}
+.hero p.lead{font-size:19px;color:var(--muted);max-width:30em;margin:22px 0 28px}
+.btn{display:inline-block;border:0;cursor:pointer;font:600 16px "Instrument Sans",sans-serif;padding:13px 22px;border-radius:12px;background:var(--brand);color:var(--brand-ink);text-decoration:none}
+.btn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn:hover{filter:brightness(1.08)}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.trust{margin-top:34px;color:var(--muted);font-size:15px}
+
+/* console */
+.console{background:var(--surface);border:1.5px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 24px 60px -30px rgba(40,50,140,.45)}
+.console h2{font-size:22px;margin-bottom:4px}
+.console .sub{color:var(--muted);font-size:15px;margin:0 0 18px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label{display:block;font-size:14px;font-weight:600;margin:0 0 6px}
+.field{margin-bottom:14px}
+input,select,textarea{width:100%;font:400 16px "Instrument Sans",sans-serif;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px}
+textarea{min-height:180px;resize:vertical}
+input[type=range]{padding:0;accent-color:var(--brand);height:28px;background:none;border:0}
+.range-head{display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1.5px solid var(--line);background:transparent;color:var(--ink);font:500 14px "Instrument Sans",sans-serif;padding:7px 13px;border-radius:99px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--soft);border-color:var(--brand);color:var(--ink)}
+.stage{display:flex;align-items:center;gap:14px;background:var(--soft);border-radius:14px;padding:12px 14px;margin:4px 0 16px}
+.stage canvas{flex:1;height:44px;width:100%}
+.status{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;min-width:84px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted)}
+.speaking .dot{background:var(--live);box-shadow:0 0 0 5px color-mix(in srgb,var(--live) 25%,transparent)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.vnote{font-size:14px;color:var(--muted);margin:-4px 0 14px;min-height:1.2em}
+.console details.diag{border:0;padding:0 0 14px;margin-top:-6px}
+.console .diag summary{font-size:14px;font-weight:500;color:var(--muted)}
+.console .diag p{font-size:13px;margin:6px 0 0}
+.warn{display:none;color:#b3261e;font-size:14px;margin-top:10px}
+
+section{padding:76px 0;border-top:1px solid var(--line)}
+section h2{font-size:clamp(30px,3.6vw,44px);max-width:16em}
+section .intro{color:var(--muted);max-width:36em;margin:14px 0 40px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin:0;padding:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;padding-top:18px;border-top:3px solid var(--brand)}
+.steps li::before{content:"Step " counter(s);display:block;font-weight:600;color:var(--brand);margin-bottom:6px}
+.steps h3{font-size:22px;margin-bottom:8px}
+.steps p{margin:0;color:var(--muted)}
+.uses{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border:1.5px solid var(--line);border-radius:18px;overflow:hidden;background:var(--surface)}
+.uses div{padding:28px;border-bottom:1.5px solid var(--line)}
+.uses div:nth-child(odd){border-inline-end:1.5px solid var(--line)}
+.uses div:nth-last-child(-n+2){border-bottom:0}
+.uses h3{font-size:21px;margin-bottom:6px}
+.uses p{margin:0;color:var(--muted);font-size:16px}
+.code{display:none;margin-top:18px}
+.code.show{display:block}
+pre{margin:0;background:#0f1330;color:#dfe4ff;border-radius:12px;padding:16px;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto;max-height:260px}
+details{border-bottom:1px solid var(--line);padding:18px 0}
+summary{cursor:pointer;font-weight:600;font-size:18px}
+details p{color:var(--muted);margin:10px 0 0;max-width:42em}
+footer{border-top:1px solid var(--line);padding:32px 0;color:var(--muted);font-size:15px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+@media (max-width:860px){
+  .hero{grid-template-columns:1fr;gap:40px;padding-bottom:56px}
+  .steps{grid-template-columns:1fr}
+  .uses{grid-template-columns:1fr}
+  .uses div,.uses div:nth-child(odd){border-inline-end:0;border-bottom:1.5px solid var(--line)!important}
+  .uses div:last-child{border-bottom:0!important}
+  nav a{margin-inline-start:16px}
+  .row{grid-template-columns:1fr}
+}
+#lang{width:auto;margin-inline-start:24px;padding:6px 10px;font-size:15px}
+nav{display:flex;align-items:center;flex-wrap:wrap}
+pre{direction:ltr;text-align:left}
+html[dir=rtl] body,html[dir=rtl] h1,html[dir=rtl] h2,html[dir=rtl] h3,html[dir=rtl] input,html[dir=rtl] select,html[dir=rtl] textarea,html[dir=rtl] button,html[dir=rtl] summary{font-family:"Noto Sans Arabic","Instrument Sans",system-ui,sans-serif}
+html[dir=rtl] h1,html[dir=rtl] h2,html[dir=rtl] h3{letter-spacing:0;line-height:1.3}
+html[lang=fr] .steps li::before{content:"Étape " counter(s)}
+html[lang=ar] .steps li::before{content:"الخطوة " counter(s)}
+.plans{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:760px}
+.plan{position:relative;background:var(--surface);border:1.5px solid var(--line);border-radius:20px;padding:28px}
+.plan.pro{border-color:var(--brand);box-shadow:0 24px 60px -34px rgba(40,50,140,.5)}
+.plan h3{font-size:22px}
+.price{font:700 44px "Bricolage Grotesque","Instrument Sans",sans-serif;margin:10px 0 16px;letter-spacing:-.02em}
+.price span{font-size:16px;font-weight:500;color:var(--muted);margin-inline-start:4px}
+.plan ul{list-style:none;margin:0 0 22px;padding:0;color:var(--muted)}
+.plan li{padding:6px 0 6px 26px;position:relative}
+.plan li::before{content:"✓";position:absolute;left:0;color:var(--live);font-weight:700}
+html[dir=rtl] .plan li{padding:6px 26px 6px 0}
+html[dir=rtl] .plan li::before{left:auto;right:0}
+.badge{position:absolute;top:-12px;inset-inline-end:20px;background:var(--brand);color:var(--brand-ink);font:600 13px "Instrument Sans",sans-serif;padding:4px 12px;border-radius:99px}
+.paynote{font-size:14px;color:var(--muted);margin:12px 0 0;min-height:1.2em}
+@media (max-width:860px){.plans{grid-template-columns:1fr}}
+dialog{border:1.5px solid var(--line);border-radius:20px;background:var(--surface);color:var(--ink);padding:28px;max-width:440px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(10,14,40,.55)}
+dialog h2{font-size:26px;margin-bottom:10px}
+dialog p{color:var(--muted);margin:0 0 14px}
+dialog .pwprice{font:700 40px "Bricolage Grotesque","Instrument Sans",sans-serif;color:var(--ink);margin:6px 0 2px}
+dialog .pwprice span{font-size:16px;font-weight:500;color:var(--muted);margin-inline-start:4px}
+.trial{font-size:14px;color:var(--muted);margin:12px 0 0;min-height:1.2em}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="#top" aria-label="Voxwright home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--brand)"/><g stroke="var(--brand-ink)" stroke-width="2.6" stroke-linecap="round"><path d="M9 13v6M13.5 9v14M18.5 11v10M23 14v4"/></g></svg>
+      Voxwright
+    </a>
+    <nav><a href="#how">How it works</a><a href="#uses">Use cases</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><select id="lang" aria-label="Language"><option value="en">English</option><option value="fr">Français</option><option value="ar">العربية</option></select></nav>
+  </header>
+
+  <main id="top">
+    <div class="hero">
+      <div>
+        <h1>Build an audio bot that speaks for your brand.</h1>
+        <p class="lead">Write what your bot should say, choose a voice, hear it instantly, then copy the code to put it on any website.</p>
+        <div class="btns">
+          <a class="btn" href="#studio">Create your bot</a>
+          <a class="btn alt" href="#how">See how it works</a>
+        </div>
+        <p class="trust">Runs in your browser. No account, no upload, no waiting.</p>
+      </div>
+
+      <div class="console" id="studio" role="region" aria-label="Audio bot generator">
+        <h2>Bot studio</h2>
+        <p class="sub">Pick a starting point, edit the script, press Play.</p>
+
+        <div class="chips" role="group" aria-label="Bot templates" id="chips"></div>
+
+        <div class="row">
+          <div class="field"><label for="name">Bot name</label><input id="name" value="Nova" maxlength="30"></div>
+          <div class="field"><label for="gender">Voice type</label><select id="gender"><option value="any">Any</option><option value="male">Male</option><option value="female">Female</option></select></div>
+        </div>
+        <div class="field"><label for="engine">Voice engine</label><select id="engine"><option value="neural">Neural (server): Arabic and more</option><option value="browser">Browser voices</option></select></div>
+        <div class="row">
+          <div class="field"><label for="accent">Accent</label><select id="accent">
+            <option value="all">All accents</option>
+            <optgroup label="Arabic"><option value="ar-SA">Arabic (Saudi)</option><option value="ar-EG">Arabic (Egypt)</option><option value="ar-AE">Arabic (UAE)</option><option value="ar-DZ">Arabic (Algeria)</option><option value="ar-TN">Arabic (Tunisia)</option></optgroup>
+            <optgroup label="English"><option value="en-US" selected>English (US)</option><option value="en-GB">English (UK)</option><option value="en-AU">English (Australia)</option><option value="en-IN">English (India)</option><option value="en-IE">English (Ireland)</option><option value="en-ZA">English (South Africa)</option><option value="en-CA">English (Canada)</option><option value="en-NG">English (Nigeria)</option></optgroup>
+            <optgroup label="French"><option value="fr-FR">French (France)</option><option value="fr-CA">French (Canada)</option><option value="fr-BE">French (Belgium)</option></optgroup>
+            <optgroup label="Spanish"><option value="es-ES">Spanish (Spain)</option><option value="es-MX">Spanish (Mexico)</option><option value="es-AR">Spanish (Argentina)</option><option value="es-US">Spanish (US)</option></optgroup>
+            <optgroup label="Other languages"><option value="pt-BR">Portuguese (Brazil)</option><option value="pt-PT">Portuguese (Portugal)</option><option value="de-DE">German</option><option value="it-IT">Italian</option><option value="nl-NL">Dutch</option><option value="tr-TR">Turkish</option><option value="ru-RU">Russian</option><option value="hi-IN">Hindi</option><option value="ja-JP">Japanese</option><option value="ko-KR">Korean</option><option value="zh-CN">Chinese (Mandarin)</option></optgroup>
+          </select></div>
+          <div class="field"><label for="voice">Voice</label><select id="voice"><option>Loading voices…</option></select></div>
+        </div>
+        <p class="vnote" id="vnote" aria-live="polite"></p>
+        <details class="diag"><summary>Voices found on this device</summary><p id="diag"></p></details>
+        <div class="field"><label for="script">Script</label><textarea id="script" rows="9"></textarea></div>
+        <div class="row">
+          <div class="field"><div class="range-head"><label for="rate">Speed</label><span id="rv">1.0×</span></div><input id="rate" type="range" min="0.6" max="1.6" step="0.05" value="1"></div>
+          <div class="field"><div class="range-head"><label for="pitch">Pitch</label><span id="pv">1.0</span></div><input id="pitch" type="range" min="0.5" max="1.8" step="0.05" value="1"></div>
+        </div>
+
+        <div class="stage" id="stage"><div class="status"><span class="dot"></span><span id="st">Ready</span></div><canvas id="wave" aria-hidden="true"></canvas></div>
+
+        <div class="actions">
+          <button class="btn" id="play">Play</button>
+          <button class="btn alt" id="stop">Stop</button>
+          <button class="btn alt" id="gen">Get embed code</button>
+        </div>
+        <p class="trial" id="trial" aria-live="polite"></p>
+        <p class="warn" id="warn">This browser can’t play speech. Try Chrome, Edge, Safari or Firefox.</p>
+
+        <div class="code" id="code">
+          <pre id="snippet"></pre>
+          <div class="actions" style="margin-top:12px"><button class="btn" id="copy">Copy code</button><button class="btn alt" id="dl">Download .html</button></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <section id="how">
+    <h2>From script to live bot in three steps</h2>
+    <p class="intro">No audio files to record or host. Your bot speaks using the voices already built into your visitors’ devices.</p>
+    <ol class="steps">
+      <li><h3>Write the script</h3><p>Start from a template or paste your own lines. Keep it short; spoken copy works best under 40 words.</p></li>
+      <li><h3>Tune the voice</h3><p>Choose a voice, then adjust speed and pitch until it sounds like your brand.</p></li>
+      <li><h3>Copy the code</h3><p>Paste one snippet into your site. A button appears and your bot speaks when visitors press it.</p></li>
+    </ol>
+  </section>
+
+  <section id="uses">
+    <h2>Where audio bots earn their place</h2>
+    <p class="intro">Anywhere a short spoken message is clearer than a paragraph of text.</p>
+    <div class="uses">
+      <div><h3>Welcome messages</h3><p>Greet visitors, explain what to do first and point them to the right page.</p></div>
+      <div><h3>Product tours</h3><p>Narrate a feature walkthrough without making anyone watch a video.</p></div>
+      <div><h3>Accessibility</h3><p>Offer a read-aloud option for key announcements and instructions.</p></div>
+      <div><h3>Kiosks and events</h3><p>Play announcements and wayfinding prompts on any screen with a browser.</p></div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <h2>Simple pricing</h2>
+    <p class="intro">Try it once, free. Then one simple monthly plan.</p>
+    <div class="plans">
+      <div class="plan"><h3>Free trial</h3><p class="price">$0<span>2 listens</span></p><ul><li>Two free listens, up to 300 characters each</li><li>No account needed</li></ul><a class="btn alt" href="#studio">Try it free</a></div>
+      <div class="plan pro"><span class="badge">Most popular</span><h3>Pro</h3><p class="price">$3.99<span>/month</span></p><ul><li>Unlimited listening and script length</li><li>All voices and accents, male and female</li><li>Embed code for your site</li><li>Cancel anytime</li></ul><button class="btn" id="getpro" type="button">Subscribe</button><p class="paynote" id="paynote" aria-live="polite"></p></div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <h2>Questions, answered</h2>
+    <div style="margin-top:32px">
+      <details><summary>Which voices can I use?</summary><p>Voices come from each visitor’s device, so the accents available depend on the browser and system. Microsoft Edge offers the widest choice. If an accent is missing, the studio shows the closest voices instead.</p></details>
+      <details><summary>Does my text leave my browser?</summary><p>Browser voices are spoken locally. Neural voices send your text to the Voxwright server, which creates the audio through Microsoft’s voice service.</p></details>
+      <details><summary>Can the bot listen and reply?</summary><p>This version speaks scripted lines. A conversational bot that listens and answers is the natural next step.</p></details>
+      <details><summary>Does it work on mobile?</summary><p>Yes. Mobile browsers require a tap to start audio, which is why the embed uses a button.</p></details>
+    </div>
+  </section>
+
+  <footer><span>© 2026 Voxwright</span><span>Made for teams that want their sites to speak.</span></footer>
+</div>
+
+<dialog id="paywall" aria-labelledby="pwt"><h2 id="pwt">Subscribe to continue</h2><p>The free trial includes two listens. Pro unlocks unlimited listening, every voice and accent, and embed code.</p><p class="pwprice">$3.99<span>/month</span></p><p>Cancel anytime</p><div class="actions"><button class="btn" id="pwsub" type="button">Subscribe</button><button class="btn alt" id="pwclose" type="button">Not now</button></div><div class="field" style="margin-top:6px"><label for="lic">License key</label><input id="lic" autocomplete="off" spellcheck="false"><div class="actions" style="margin-top:8px"><button class="btn alt" id="licbtn" type="button">Activate</button></div></div>
+<p class="paynote" id="pwnote" aria-live="polite"></p></dialog>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var GUMROAD_URL=""; /* paste your Gumroad product link between the quotes */
+  var T=[
+    {k:"Support agent",n:"Nova",t:"Hi, I’m Nova. I can help you track an order, update your details or reach a human teammate. What would you like to do?",r:1,p:1},
+    {k:"Receptionist",n:"Ada",t:"Welcome to our studio. Please take a seat and let us know who you’re here to see. We’ll be right with you.",r:.95,p:1.1},
+    {k:"Product guide",n:"Milo",t:"Welcome aboard. Start by creating a project, then invite your team from the sidebar. Everything saves automatically.",r:1.05,p:.95},
+    {k:"Announcer",n:"Rex",t:"Attention, please. The next session begins in five minutes in Hall B. Thank you for joining us today.",r:.9,p:.8,a:"en-GB",g:"male"},
+    {k:"Français",n:"Hugo",t:"Bonjour et bienvenue. Je suis Hugo, votre assistant. Dites-moi comment je peux vous aider aujourd’hui.",r:1,p:.9,a:"fr-FR",g:"male"},
+    {k:"Español",n:"Lucía",t:"Hola, bienvenido. Soy Lucía y estoy aquí para ayudarte a empezar. ¿Qué necesitas hoy?",r:1,p:1.05,a:"es-ES",g:"female"}
+  ];
+  var synth=window.speechSynthesis, voices=[], speaking=false;
+  var chips=$("chips");
+  T.forEach(function(t,i){
+    var b=document.createElement("button");b.className="chip";b.type="button";b.textContent=t.k;b.setAttribute("aria-pressed",i===0);
+    b.onclick=function(){apply(t);[].forEach.call(chips.children,function(c){c.setAttribute("aria-pressed",c===b)})};
+    chips.appendChild(b);
+  });
+  function apply(t){$("name").value=t.n;$("script").value=t.t;$("rate").value=t.r;$("pitch").value=t.p;if(t.a)$("accent").value=t.a;if(t.g&&$("gender").value==="any")$("gender").value=t.g;lab();if(($("engine")&&$("engine").value==="neural")||(synth&&voices.length))loadVoices();}
+  function lab(){$("rv").textContent=Number($("rate").value).toFixed(2).replace(/0$/,"")+"×";$("pv").textContent=Number($("pitch").value).toFixed(2).replace(/0$/,"");}
+  $("rate").oninput=$("pitch").oninput=lab;
+  apply(T[0]);
+
+  var MALE_N="male|david|mark|daniel|george|james|richard|guy|ryan|alex|thomas|jorge|diego|pablo|carlos|jamal|hamed|naayf|shakir|tarik|maged|fred|paul|henri|claude|antoine|stefan|conrad|jan|ravi|hemant|prabhat|ichiro|kangkang|yunyang|yunxi|ivan|pavel|cem|ahmet|filipe|enzo|liam|ahmed|hamdan|salman|raul|luca|killian|connor|sam|christopher|eric|davis|jason|tony|brian|rishi|oliver|william|hugo|matthew|aaron|arthur|gordon|rocko|reed|alvaro|alonso|tomas|duarte|antonio|maarten|dmitry|madhur|keita|injoon|abeo|luke|gerard|ismael|hedi|zahid|michael|nathan|stephan|bruno|cosimo|sergio|jose|juan|miguel|andrei|nicolas|jean|pierre|marc|stefanos|mateo|david";
+  var FEMALE_N="female|zira|hazel|susan|samantha|karen|moira|tessa|fiona|victoria|allison|ava|serena|kate|mouna|salma|hoda|zariyah|fatima|amina|reem|jenny|aria|sonia|natasha|neerja|emily|leah|clara|ezinne|denise|sylvie|charline|elvira|dalia|elena|paloma|francisca|raquel|katja|elsa|colette|emel|svetlana|swara|nanami|sunhi|xiaoxiao|huihui|yaoyao|heami|hortense|julie|paulina|helena|laura|sabina|maria|lucia|isabella|amelie|mia|anna|ioana|hedda|ayumi|haruka|sayaka|yuna|joana|luciana|catherine|linda|heather|cortana|zuzana|monica|alice|amelia|carmit|ellen|samira|lekha|kalpana|veena|tian-tian|ting-ting|sin-ji|mei-jia|yelda|milena|katya|irina|yu-shu|kyoko|jessica|michelle|libby|maisie|clarita|eka";
+  var mRx=new RegExp("\\b("+MALE_N+")\\b","i"),fRx=new RegExp("\\b("+FEMALE_N+")\\b","i");
+  function gOf(v){return fRx.test(v.name)?"female":mRx.test(v.name)?"male":"unknown"}
+  function isMale(v){return gOf(v)==="male"}
+  function norm(l){return (l||"").replace("_","-").toLowerCase()}
+  function effPitch(){var p=+$("pitch").value,v=voices[$("voice").value];if($("gender").value==="male"&&v&&!isMale(v))p=Math.max(.5,p*.7);return Math.round(p*100)/100}
+  var NV=[["ar-SA","HamedNeural","ZariyahNeural"],["ar-EG","ShakirNeural","SalmaNeural"],["ar-AE","HamdanNeural","FatimaNeural"],["ar-DZ","IsmaelNeural","AminaNeural"],["ar-TN","HediNeural","ReemNeural"],
+    ["en-US","GuyNeural","JennyNeural"],["en-GB","RyanNeural","SoniaNeural"],["en-AU","WilliamNeural","NatashaNeural"],["en-IN","PrabhatNeural","NeerjaNeural"],["en-IE","ConnorNeural","EmilyNeural"],["en-ZA","LukeNeural","LeahNeural"],["en-CA","LiamNeural","ClaraNeural"],["en-NG","AbeoNeural","EzinneNeural"],
+    ["fr-FR","HenriNeural","DeniseNeural"],["fr-CA","AntoineNeural","SylvieNeural"],["fr-BE","GerardNeural","CharlineNeural"],
+    ["es-ES","AlvaroNeural","ElviraNeural"],["es-MX","JorgeNeural","DaliaNeural"],["es-AR","TomasNeural","ElenaNeural"],["es-US","AlonsoNeural","PalomaNeural"],
+    ["pt-BR","AntonioNeural","FranciscaNeural"],["pt-PT","DuarteNeural","RaquelNeural"],["de-DE","ConradNeural","KatjaNeural"],["it-IT","DiegoNeural","ElsaNeural"],["nl-NL","MaartenNeural","ColetteNeural"],["tr-TR","AhmetNeural","EmelNeural"],["ru-RU","DmitryNeural","SvetlanaNeural"],["hi-IN","MadhurNeural","SwaraNeural"],["ja-JP","KeitaNeural","NanamiNeural"],["ko-KR","InJoonNeural","SunHiNeural"],["zh-CN","YunxiNeural","XiaoxiaoNeural"]];
+  var NA=[];NV.forEach(function(r){NA.push({id:r[0]+"-"+r[1],lang:r[0],g:"male",n:r[1].replace("Neural","")});NA.push({id:r[0]+"-"+r[2],lang:r[0],g:"female",n:r[2].replace("Neural","")})});
+  function loadNeural(){
+    var sel=$("voice"),ac=$("accent").value,g=$("gender").value;sel.innerHTML="";
+    var l=NA.filter(function(v){return (ac==="all"||v.lang===ac)&&(g==="any"||v.g===g)});
+    if(!l.length)l=NA.filter(function(v){return ac==="all"||v.lang===ac});
+    l.forEach(function(v){var o=document.createElement("option");o.value=v.id;o.textContent=v.n+" ("+v.lang+", "+v.g+")";sel.appendChild(o)});
+    $("vnote").textContent=l.length?"Neural voices run through the Voxwright server.":"No neural voice for this accent.";
+    $("diag").textContent="Neural engine active: "+NA.length+" voices.";
+  }
+  function nParams(){
+    var r=Math.round((+$("rate").value-1)*100),h=Math.round((+$("pitch").value-1)*50);
+    return {rate:(r>=0?"+":"")+r+"%",pitch:(h>=0?"+":"")+h+"Hz"};
+  }
+  function nUrl(base){
+    var q=nParams();
+    return base+"/tts?voice="+encodeURIComponent($("voice").value)+"&rate="+encodeURIComponent(q.rate)+"&pitch="+encodeURIComponent(q.pitch)+"&text="+encodeURIComponent($("script").value);
+  }
+  function nBody(){var q=nParams();return {voice:$("voice").value,rate:q.rate,pitch:q.pitch,text:scriptText(),license:licKey}}
+  var curAudio=null;
+  function playNeural(){
+    if(curAudio){curAudio.pause();curAudio=null}
+    $("st").textContent=T("Loading");
+    fetch("/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nBody())}).then(function(r){if(r.status===402){showPaywall();throw new Error("subscription required")}if(!r.ok)throw new Error("HTTP "+r.status);return r.blob()}).then(function(b){
+      var a=new Audio(URL.createObjectURL(b));curAudio=a;
+      a.onplay=function(){setState(true)};a.onended=a.onpause=function(){setState(false)};
+      return a.play();
+    }).catch(function(e){setState(false);if(e.message==="subscription required")return;$("vnote").textContent="Neural voice failed ("+e.message+"). Make sure server.py is running and you opened http://localhost:8000."});
+  }
+  function buildNeural(name){
+    var base=location.protocol==="file:"?"http://localhost:8000":location.origin;
+    return '<button id="audio-bot">Talk to '+name.replace(/[<>"]/g,"")+'</button>\n<script>\n(function(){\n  var body = '+JSON.stringify(nBody()).replace(/</g,"\\u003c")+';\n  var a;\n  document.getElementById("audio-bot").onclick = function(){\n    if (a) a.pause();\n    fetch("'+base+'/tts", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)})\n      .then(function(r){ return r.blob(); })\n      .then(function(b){ a = new Audio(URL.createObjectURL(b)); a.play(); });\n  };\n})();\n<\/script>';
+  }
+  function loadVoices(){
+    if($("engine").value==="neural"){loadNeural();return}
+    if(!synth){$("warn").style.display="block";return}
+    voices=synth.getVoices();
+    var sel=$("voice"),ac=$("accent").value,g=$("gender").value,note="";
+    sel.innerHTML="";
+    var idx=voices.map(function(v,i){return i});
+    var byAcc=idx.filter(function(i){return ac==="all"||norm(voices[i].lang)===norm(ac)});
+    var list=byAcc;
+    if(!byAcc.length&&ac!=="all"){
+      var pre=norm(ac).split("-")[0];
+      list=idx.filter(function(i){return norm(voices[i].lang).split("-")[0]===pre});
+      var accName=$("accent").options[$("accent").selectedIndex].text;
+      note=list.length?"No "+accName+" voice on this device. Showing the closest same-language voices.":"No "+accName+" voice on this device.";
+      }
+    if(g!=="any"){
+      var gl=list.filter(function(i){return gOf(voices[i])===g});
+      if(!gl.length&&ac!=="all"){
+        var pre2=norm(ac).split("-")[0];
+        gl=idx.filter(function(i){return norm(voices[i].lang).split("-")[0]===pre2&&gOf(voices[i])===g});
+        if(gl.length)note=(note?note+" ":"")+"No "+g+" voice for this exact accent, showing a "+g+" voice in the same language.";
+      }
+      if(gl.length)list=gl;
+      else if(list.length){note=(note?note+" ":"")+"No "+g+" voice is installed for this language on this device"+(g==="male"?", so a much deeper pitch is applied. For a real male voice use Microsoft Edge or the neural server.":".")}
+    }
+    if(!list.length)list=idx;
+    list.forEach(function(i){var v=voices[i],o=document.createElement("option");o.value=i;o.textContent=v.name.replace(/^(Microsoft|Google)\s/,"")+" ("+v.lang+", "+gOf(v)+")";sel.appendChild(o)});
+    if(!voices.length){sel.innerHTML="<option>Default voice</option>"}
+    $("vnote").textContent=note||(list.length?list.length+" voice"+(list.length>1?"s":"")+" available":"");
+    var ar=voices.filter(function(v){return norm(v.lang).split("-")[0]==="ar"}).map(function(v){return v.name+" ["+v.lang+"]"});
+    $("diag").textContent=voices.length+" voices installed. Arabic voices: "+(ar.length?ar.join(", "):"none")+".";
+  }
+  $("accent").onchange=$("gender").onchange=$("engine").onchange=loadVoices;
+  if(synth){loadVoices();synth.onvoiceschanged=loadVoices;var tries=0,iv=setInterval(function(){if(synth.getVoices().length!==voices.length)loadVoices();if(++tries>12)clearInterval(iv)},500)}else{$("warn").style.display="block"}
+  fetch("/health").then(function(r){if(!r.ok)throw 0}).catch(function(){$("engine").value="browser";loadVoices();$("vnote").textContent="Neural server not running, using browser voices. Start it with: python server.py"});
+
+  /* waveform */
+  var cv=$("wave"),cx=cv.getContext("2d"),raf=0,ph=0;
+  function size(){var r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=r.width*d;cv.height=r.height*d}
+  function color(){return getComputedStyle(document.documentElement).getPropertyValue(speaking?"--brand":"--muted").trim()}
+  function draw(){
+    var w=cv.width,h=cv.height,n=Math.floor(w/(8*(window.devicePixelRatio||1)));
+    cx.clearRect(0,0,w,h);cx.fillStyle=color();ph+=.18;
+    var bw=w/n;
+    for(var i=0;i<n;i++){
+      var a=speaking?(.25+.75*Math.abs(Math.sin(ph+i*.45)*Math.cos(ph*.6+i*.2))):.08;
+      var bh=Math.max(3,h*a);
+      cx.fillRect(i*bw+bw*.2,(h-bh)/2,bw*.6,bh);
+    }
+    raf=requestAnimationFrame(draw);
+  }
+  size();window.addEventListener("resize",size);draw();
+
+  function setState(on){speaking=on;$("stage").classList.toggle("speaking",on);$("st").textContent=T(on?"Speaking":"Ready")}
+  function chunks(t){
+    var m=t.replace(/\s+/g," ").trim().match(/[^.!?؟۔]+[.!?؟۔]*\s*/g)||[t],out=[],cur="";
+    m.forEach(function(x){if(cur&&(cur+x).length>180){out.push(cur);cur=x}else cur+=x});
+    if(cur)out.push(cur);return out.length?out:[" "];
+  }
+  function play(){if(!gate())return;playNow()}
+  function playNow(){
+    if($("engine").value==="neural")return playNeural();
+    if(!synth)return;
+    synth.cancel();
+    var parts=chunks(scriptText()||" "),v=voices[$("voice").value],started=false,pitch=effPitch(),rate=+$("rate").value;
+    parts.forEach(function(p,i){
+      var u=new SpeechSynthesisUtterance(p);
+      if(v){u.voice=v;u.lang=v.lang}
+      u.rate=rate;u.pitch=pitch;
+      if(i===0)u.onstart=function(){started=true;setState(true)};
+      if(i===parts.length-1)u.onend=function(){setState(false)};
+      u.onerror=function(e){setState(false);if(e&&(e.error==='canceled'||e.error==='interrupted'))return;$("vnote").textContent="Playback failed ("+(e&&e.error||"unknown")+"). This voice isn’t usable here. Pick another voice or try Microsoft Edge."};
+      synth.speak(u);
+    });
+    setTimeout(function(){if(!started&&!synth.speaking){$("vnote").textContent="Nothing played. This voice may not be installed or may not support this language. Open “Voices found on this device” to see what is available."}},2000);
+  }
+  $("play").onclick=play;
+  $("stop").onclick=function(){if(synth)synth.cancel();if(curAudio)curAudio.pause();setState(false)};
+
+  function esc(s){return s.replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/\n/g," ").replace(/</g,"\\u003c")}
+  function build(){
+    var v=voices[$("voice").value],name=$("name").value||"Bot";
+    if($("engine").value==="neural")return buildNeural(name);
+    return '<button id="audio-bot" aria-label="Talk to '+name.replace(/[<>"]/g,"")+'">Talk to '+name.replace(/[<>"]/g,"")+'</button>\n<script>\n(function(){\n  var text = "'+esc($("script").value)+'";\n  var voiceName = "'+(v?esc(v.name):"")+'";\n  document.getElementById("audio-bot").onclick = function(){\n    var s = window.speechSynthesis; s.cancel();\n    var v = s.getVoices().filter(function(x){return x.name === voiceName})[0];\n    var parts = text.match(/[^.!?؟۔]+[.!?؟۔]*\\s*/g) || [text];\n    parts.forEach(function(p){\n      var u = new SpeechSynthesisUtterance(p);\n      if (v) { u.voice = v; u.lang = v.lang; }\n      u.rate = '+$("rate").value+'; u.pitch = '+effPitch()+';\n      s.speak(u);\n    });\n  };\n})();\n<\/script>';
+  }
+  $("gen").onclick=function(){if(!isPro()){showPaywall();return}$("snippet").textContent=build();$("code").classList.add("show");$("code").scrollIntoView({block:"nearest",behavior:"smooth"})};
+  $("copy").onclick=function(){
+    var t=$("snippet").textContent,b=$("copy");
+    function ok(){b.textContent=T("Copied");setTimeout(function(){b.textContent=T("Copy code")},1600)}
+    try{navigator.clipboard.writeText(t).then(ok,function(){fallback(t,ok)})}catch(e){fallback(t,ok)}
+  };
+  function fallback(t,ok){var a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy");ok()}catch(e){}document.body.removeChild(a)}
+  $("dl").onclick=function(){
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+($("name").value||"Bot").replace(/[<>]/g,"")+'</title></head><body>\n'+$("snippet").textContent+'\n</body></html>';
+    var a=document.createElement("a");a.href="data:text/html;charset=utf-8,"+encodeURIComponent(html);a.download="audio-bot.html";a.click();
+  };
+
+  $("getpro").onclick=function(){subscribe($("paynote"))};
+  function subscribe(n){
+    if(!GUMROAD_URL){n.textContent=T("Checkout isn’t connected yet. This is a preview of the pricing.");return}
+    var w=null;try{w=window.open(GUMROAD_URL,"_blank")}catch(e){}
+    if(w){try{w.opener=null}catch(e){}n.textContent="";return}
+    n.textContent="";var a=document.createElement("a");a.href=GUMROAD_URL;a.target="_blank";a.rel="noopener";a.textContent=T("Open checkout");a.style.textDecoration="underline";n.appendChild(a);
+  }
+  var trialMem=0,trialMode=false,TRIAL_MAX=2;
+  function trialCount(){try{var v=localStorage.getItem("vx-trial");if(v==="used")return TRIAL_MAX;return parseInt(v||"0",10)||0}catch(e){return trialMem}}
+  function trialUsed(){return trialCount()>=TRIAL_MAX}
+  function markTrial(){var n=trialCount()+1;trialMem=n;try{localStorage.setItem("vx-trial",String(n))}catch(e){}}
+  var proActive=false,licKey="";
+  function isPro(){return proActive}
+  function showTrial(){$("trial").textContent=isPro()?T("Pro active"):T(trialUsed()?"Free trial used. Subscribe to continue.":(TRIAL_MAX-trialCount()>=2?"Free trial: 2 listens left":"Free trial: 1 listen left"))}
+  function showPaywall(){var d=$("paywall");try{d.showModal()}catch(e){d.setAttribute("open","")}}
+  function gate(){if(isPro()){trialMode=false;return true}if(trialUsed()){showPaywall();return false}markTrial();trialMode=true;showTrial();return true}
+  function scriptText(){var t=$("script").value;return trialMode?t.slice(0,300):t}
+  $("pwsub").onclick=function(){subscribe($("pwnote"))};
+  $("pwclose").onclick=function(){var d=$("paywall");if(d.close)d.close();else d.removeAttribute("open")};
+  $("licbtn").onclick=function(){
+    var k=$("lic").value.trim();if(!k)return;
+    activate(k).then(function(ok){
+      if(ok){licKey=k;proActive=true;try{localStorage.setItem("vx-lic",k)}catch(e){}showTrial();$("pwnote").textContent=T("Pro is active. Thank you!");setTimeout(function(){$("pwclose").onclick()},900)}
+      else{$("pwnote").textContent=T("Invalid or expired license key.")}
+    }).catch(function(){$("pwnote").textContent=T("Invalid or expired license key.")});
+  };
+  function activate(k){return fetch("/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:k})}).then(function(r){return r.json()}).then(function(j){return !!j.valid})}
+  /* site language */
+  var DICT={"Pricing": ["Tarifs", "الأسعار"], "Simple pricing": ["Des tarifs simples", "أسعار بسيطة"], "Pro": ["Pro", "احترافي"], "/month": ["/mois", "/شهر"], "Most popular": ["Le plus choisi", "الأكثر اختياراً"], "Starter templates": ["Modèles de départ", "نماذج جاهزة"], "Embed code": ["Code d’intégration", "كود التضمين"], "Male and female voices": ["Voix masculines et féminines", "أصوات ذكورية وأنثوية"], "Checkout isn’t connected yet. This is a preview of the pricing.": ["Le paiement n’est pas encore connecté. Ceci est un aperçu des tarifs.", "الدفع غير مفعّل بعد. هذا عرض أولي للأسعار."], "How it works": ["Comment ça marche", "كيف يعمل"], "Use cases": ["Cas d’usage", "حالات الاستخدام"], "FAQ": ["FAQ", "الأسئلة الشائعة"], "Build an audio bot that speaks for your brand.": ["Créez un bot audio qui parle pour votre marque.", "أنشئ روبوتاً صوتياً يتحدث باسم علامتك التجارية."], "Write what your bot should say, choose a voice, hear it instantly, then copy the code to put it on any website.": ["Écrivez ce que votre bot doit dire, choisissez une voix, écoutez-la tout de suite, puis copiez le code pour l’ajouter à n’importe quel site.", "اكتب ما يجب أن يقوله الروبوت، واختر صوتاً، واستمع إليه فوراً، ثم انسخ الكود لإضافته إلى أي موقع."], "Create your bot": ["Créer mon bot", "أنشئ روبوتك"], "See how it works": ["Voir comment ça marche", "شاهد كيف يعمل"], "Runs in your browser. No account, no upload, no waiting.": ["Fonctionne dans votre navigateur. Sans compte, sans envoi, sans attente.", "يعمل في متصفحك. بلا حساب ولا رفع ملفات ولا انتظار."], "Bot studio": ["Studio de bot", "استوديو الروبوت"], "Pick a starting point, edit the script, press Play.": ["Choisissez un modèle, modifiez le texte, appuyez sur Lire.", "اختر نموذجاً، وعدّل النص، ثم اضغط تشغيل."], "Support agent": ["Support client", "دعم العملاء"], "Receptionist": ["Accueil", "الاستقبال"], "Product guide": ["Guide produit", "دليل المنتج"], "Announcer": ["Annonceur", "المذيع"], "Bot name": ["Nom du bot", "اسم الروبوت"], "Voice type": ["Type de voix", "نوع الصوت"], "Any": ["Peu importe", "أي نوع"], "Male": ["Homme", "ذكر"], "Female": ["Femme", "أنثى"], "Voice engine": ["Moteur vocal", "محرك الصوت"], "Browser voices": ["Voix du navigateur", "أصوات المتصفح"], "Accent": ["Accent", "اللهجة"], "All accents": ["Tous les accents", "كل اللهجات"], "Voice": ["Voix", "الصوت"], "Script": ["Texte", "النص"], "Speed": ["Vitesse", "السرعة"], "Pitch": ["Hauteur", "درجة الصوت"], "Ready": ["Prêt", "جاهز"], "Speaking": ["En lecture", "يتحدث"], "Loading": ["Chargement", "جارٍ التحميل"], "Play": ["Lire", "تشغيل"], "Stop": ["Stop", "إيقاف"], "Get embed code": ["Obtenir le code", "احصل على الكود"], "Copy code": ["Copier le code", "انسخ الكود"], "Copied": ["Copié", "تم النسخ"], "Download .html": ["Télécharger .html", "تنزيل .html"], "Voices found on this device": ["Voix trouvées sur cet appareil", "الأصوات الموجودة على هذا الجهاز"], "This browser can’t play speech. Try Chrome, Edge, Safari or Firefox.": ["Ce navigateur ne peut pas lire la parole. Essayez Chrome, Edge, Safari ou Firefox.", "لا يستطيع هذا المتصفح تشغيل الكلام. جرّب Chrome أو Edge أو Safari أو Firefox."], "From script to live bot in three steps": ["Du texte au bot en trois étapes", "من النص إلى الروبوت في ثلاث خطوات"], "No audio files to record or host. Your bot speaks using the voices already built into your visitors’ devices.": ["Aucun fichier audio à enregistrer ou héberger. Votre bot parle avec les voix déjà intégrées aux appareils de vos visiteurs.", "لا حاجة لتسجيل ملفات صوتية أو استضافتها. يتحدث الروبوت بالأصوات المثبتة أصلاً على أجهزة زوارك."], "Write the script": ["Écrire le texte", "اكتب النص"], "Start from a template or paste your own lines. Keep it short; spoken copy works best under 40 words.": ["Partez d’un modèle ou collez vos propres phrases. Restez bref : un texte parlé fonctionne mieux sous 40 mots.", "ابدأ من نموذج أو الصق جملك الخاصة. اجعله قصيراً؛ فالنص المنطوق يعمل بأفضل شكل بأقل من 40 كلمة."], "Tune the voice": ["Régler la voix", "اضبط الصوت"], "Choose a voice, then adjust speed and pitch until it sounds like your brand.": ["Choisissez une voix, puis ajustez la vitesse et la hauteur jusqu’à ce qu’elle corresponde à votre marque.", "اختر صوتاً ثم اضبط السرعة ودرجة الصوت حتى يعبّر عن علامتك التجارية."], "Copy the code": ["Intégrer le code", "انسخ الكود وأضفه"], "Paste one snippet into your site. A button appears and your bot speaks when visitors press it.": ["Collez un extrait dans votre site. Un bouton apparaît et votre bot parle quand les visiteurs l’utilisent.", "الصق مقطعاً واحداً في موقعك. سيظهر زر، ويتحدث الروبوت عندما يضغط عليه الزوار."], "Where audio bots earn their place": ["Où les bots audio sont utiles", "أين تفيد الروبوتات الصوتية"], "Anywhere a short spoken message is clearer than a paragraph of text.": ["Partout où un court message parlé est plus clair qu’un paragraphe.", "في أي مكان تكون فيه رسالة منطوقة قصيرة أوضح من فقرة نصية."], "Welcome messages": ["Messages d’accueil", "رسائل الترحيب"], "Greet visitors, explain what to do first and point them to the right page.": ["Accueillez les visiteurs, expliquez par où commencer et orientez-les vers la bonne page.", "رحّب بالزوار، واشرح لهم من أين يبدؤون، ووجّههم إلى الصفحة المناسبة."], "Product tours": ["Visites guidées", "جولات المنتج"], "Narrate a feature walkthrough without making anyone watch a video.": ["Commentez une démonstration sans obliger personne à regarder une vidéo.", "اشرح الميزات صوتياً دون إجبار أحد على مشاهدة فيديو."], "Accessibility": ["Accessibilité", "سهولة الوصول"], "Offer a read-aloud option for key announcements and instructions.": ["Proposez une lecture à voix haute pour les annonces et consignes importantes.", "وفّر خيار القراءة بصوت عالٍ للإعلانات والتعليمات المهمة."], "Kiosks and events": ["Bornes et événements", "الأكشاك والفعاليات"], "Play announcements and wayfinding prompts on any screen with a browser.": ["Diffusez annonces et indications sur tout écran doté d’un navigateur.", "شغّل الإعلانات وإرشادات التوجيه على أي شاشة بها متصفح."], "Questions, answered": ["Vos questions, nos réponses", "أسئلة وأجوبة"], "Which voices can I use?": ["Quelles voix puis-je utiliser ?", "ما الأصوات التي يمكنني استخدامها؟"], "Does my text leave my browser?": ["Mon texte quitte-t-il mon navigateur ?", "هل يغادر نصي متصفحي؟"], "No. The script is spoken locally, and the embed code contains your text directly, so nothing is sent to a server.": ["Non. Le texte est lu localement et le code d’intégration contient directement votre texte ; rien n’est envoyé à un serveur.", "لا. يُنطق النص محلياً، ويحتوي كود التضمين على نصك مباشرة، فلا يُرسل شيء إلى خادم."], "Browser voices are spoken locally. Neural voices send your text to the Voxwright server, which creates the audio through Microsoft’s voice service.": ["Les voix du navigateur sont lues localement. Les voix neuronales envoient votre texte au serveur Voxwright, qui crée l’audio via le service vocal de Microsoft.", "تُنطق أصوات المتصفح محلياً. أما الأصوات العصبية فترسل نصك إلى خادم Voxwright الذي ينشئ الصوت عبر خدمة Microsoft الصوتية."], "Can the bot listen and reply?": ["Le bot peut-il écouter et répondre ?", "هل يستطيع الروبوت الاستماع والرد؟"], "This version speaks scripted lines. A conversational bot that listens and answers is the natural next step.": ["Cette version prononce des phrases préécrites. Un bot conversationnel qui écoute et répond est l’étape suivante.", "تنطق هذه النسخة جملاً مكتوبة مسبقاً. الروبوت الحواري الذي يستمع ويجيب هو الخطوة التالية."], "Does it work on mobile?": ["Ça marche sur mobile ?", "هل يعمل على الهاتف؟"], "Yes. Mobile browsers require a tap to start audio, which is why the embed uses a button.": ["Oui. Les navigateurs mobiles exigent un toucher pour lancer l’audio, d’où le bouton.", "نعم. تتطلب متصفحات الهاتف نقرة لبدء الصوت، ولهذا يستخدم التضمين زراً."], "Made for teams that want their sites to speak.": ["Conçu pour les équipes qui veulent que leur site parle.", "صُمم للفرق التي تريد لمواقعها أن تتحدث."], "Neural (server): Arabic and more": ["Neuronal (serveur) : arabe et plus", "عصبي (خادم): العربية والمزيد"], "Voices come from each visitor’s device, so the accents available depend on the browser and system. Microsoft Edge offers the widest choice. If an accent is missing, the studio shows the closest voices instead.": ["Les voix viennent de l’appareil de chaque visiteur ; les accents disponibles dépendent donc du navigateur et du système. Microsoft Edge offre le plus large choix. Si un accent manque, le studio propose les voix les plus proches.", "تأتي الأصوات من جهاز كل زائر، لذا تعتمد اللهجات المتاحة على المتصفح والنظام. يوفر Microsoft Edge أوسع اختيار. إذا لم تتوفر لهجة ما، يعرض الاستوديو أقرب الأصوات."], "Try it once, free. Then one simple monthly plan.": ["Essayez une fois, gratuitement. Ensuite, un seul abonnement mensuel.", "جرّبه مرة واحدة مجاناً. بعدها اشتراك شهري واحد وبسيط."], "Free trial": ["Essai gratuit", "تجربة مجانية"], "No account needed": ["Aucun compte requis", "لا حاجة إلى حساب"], "Try it free": ["Essayer gratuitement", "جرّب مجاناً"], "Unlimited listening and script length": ["Écoute et longueur de texte illimitées", "استماع وطول نص غير محدودين"], "All voices and accents, male and female": ["Toutes les voix et tous les accents, masculins et féminins", "جميع الأصوات واللهجات، ذكوراً وإناثاً"], "Cancel anytime": ["Résiliable à tout moment", "يمكنك الإلغاء في أي وقت"], "Subscribe": ["S’abonner", "اشترك"], "Subscribe to continue": ["Abonnez-vous pour continuer", "اشترك للمتابعة"], "Not now": ["Pas maintenant", "ليس الآن"], "Free trial: 1 listen left": ["Essai gratuit : 1 écoute restante", "التجربة المجانية: بقي استماع واحد"], "Free trial used. Subscribe to continue.": ["Essai gratuit utilisé. Abonnez-vous pour continuer.", "انتهت التجربة المجانية. اشترك للمتابعة."], "License key": ["Clé de licence", "مفتاح الترخيص"], "Activate": ["Activer", "تفعيل"], "Invalid or expired license key.": ["Clé de licence invalide ou expirée.", "مفتاح الترخيص غير صالح أو منتهي."], "Pro is active. Thank you!": ["Pro est actif. Merci !", "تم تفعيل Pro. شكراً لك!"], "Pro active": ["Pro actif", "Pro مفعّل"], "Free trial: 2 listens left": ["Essai gratuit : 2 écoutes restantes", "التجربة المجانية: بقي استماعان"], "2 listens": ["2 écoutes", "استماعان"], "Two free listens, up to 300 characters each": ["Deux écoutes gratuites, jusqu’à 300 caractères chacune", "استماعان مجانيان، حتى 300 حرف لكل منهما"], "The free trial includes two listens. Pro unlocks unlimited listening, every voice and accent, and embed code.": ["L’essai gratuit comprend deux écoutes. Pro débloque l’écoute illimitée, toutes les voix et tous les accents, et le code d’intégration.", "تتضمن التجربة المجانية استماعين. يتيح Pro الاستماع غير المحدود وجميع الأصوات واللهجات وكود التضمين."], "Open checkout": ["Ouvrir le paiement", "افتح صفحة الدفع"]},LANG="en",LI={fr:0,ar:1},REV={};
+  Object.keys(DICT).forEach(function(k){DICT[k].forEach(function(t){if(!(t in REV))REV[t]=k})});
+  function T(s){var d=DICT[s];return LANG==="en"||!d?s:d[LI[LANG]]}
+  function walk(){
+    var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:function(n){var p=n.parentNode;if(!p||/^(SCRIPT|STYLE|PRE|TEXTAREA)$/.test(p.nodeName))return NodeFilter.FILTER_REJECT;return n.nodeValue.trim()?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT}});
+    var n,list=[];while(n=w.nextNode())list.push(n);
+    list.forEach(function(n){
+      var raw=n.nodeValue,k=raw.trim();
+      if(n.__en===undefined){var en=DICT[k]?k:(REV[k]||k);n.__en=raw.replace(k,function(){return en})}
+      var ek=n.__en.trim();
+      n.nodeValue=(LANG==="en"||!DICT[ek])?n.__en:n.__en.replace(ek,function(){return DICT[ek][LI[LANG]]});
+    });
+  }
+  function setLang(l){
+    LANG=l;var h=document.documentElement;h.lang=l;h.dir=l==="ar"?"rtl":"ltr";
+    walk();$("st").textContent=T(speaking?"Speaking":"Ready");$("lang").value=l;
+    try{localStorage.setItem("vx-lang",l)}catch(e){}
+  }
+  $("script").setAttribute("dir","auto");
+  $("lang").onchange=function(){setLang(this.value)};
+  var savedLang=null;try{savedLang=localStorage.getItem("vx-lang")}catch(e){}
+  var nl=(navigator.language||"en").toLowerCase();
+  fetch("/config").then(function(r){return r.json()}).then(function(j){if(j.gumroad_url)GUMROAD_URL=j.gumroad_url}).catch(function(){});
+  try{var sk=localStorage.getItem("vx-lic");if(sk)activate(sk).then(function(ok){if(ok){licKey=sk;proActive=true;showTrial()}}).catch(function(){})}catch(e){}
+  showTrial();
+  setLang((savedLang&&savedLang!=="ary"?savedLang:null)||(nl.indexOf("ar")===0?"ar":nl.indexOf("fr")===0?"fr":"en"));
+})();
+</script>
+</body>
+</html>
