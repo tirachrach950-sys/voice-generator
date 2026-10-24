@@ -255,7 +255,7 @@ dialog .pwprice span{font-size:16px;font-weight:500;color:var(--muted);margin-in
 (function(){
   var $=function(i){return document.getElementById(i)};
   var GUMROAD_URL=""; /* paste your Gumroad product link between the quotes */
-  var T=[
+  var TPL=[
     {k:"Support agent",n:"Nova",t:"Hi, I’m Nova. I can help you track an order, update your details or reach a human teammate. What would you like to do?",r:1,p:1},
     {k:"Receptionist",n:"Ada",t:"Welcome to our studio. Please take a seat and let us know who you’re here to see. We’ll be right with you.",r:.95,p:1.1},
     {k:"Product guide",n:"Milo",t:"Welcome aboard. Start by creating a project, then invite your team from the sidebar. Everything saves automatically.",r:1.05,p:.95},
@@ -265,7 +265,7 @@ dialog .pwprice span{font-size:16px;font-weight:500;color:var(--muted);margin-in
   ];
   var synth=window.speechSynthesis, voices=[], speaking=false;
   var chips=$("chips");
-  T.forEach(function(t,i){
+  TPL.forEach(function(t,i){
     var b=document.createElement("button");b.className="chip";b.type="button";b.textContent=t.k;b.setAttribute("aria-pressed",i===0);
     b.onclick=function(){apply(t);[].forEach.call(chips.children,function(c){c.setAttribute("aria-pressed",c===b)})};
     chips.appendChild(b);
@@ -273,7 +273,6 @@ dialog .pwprice span{font-size:16px;font-weight:500;color:var(--muted);margin-in
   function apply(t){$("name").value=t.n;$("script").value=t.t;$("rate").value=t.r;$("pitch").value=t.p;if(t.a)$("accent").value=t.a;if(t.g&&$("gender").value==="any")$("gender").value=t.g;lab();if(($("engine")&&$("engine").value==="neural")||(synth&&voices.length))loadVoices();}
   function lab(){$("rv").textContent=Number($("rate").value).toFixed(2).replace(/0$/,"")+"×";$("pv").textContent=Number($("pitch").value).toFixed(2).replace(/0$/,"");}
   $("rate").oninput=$("pitch").oninput=lab;
-  apply(T[0]);
 
   var MALE_N="male|david|mark|daniel|george|james|richard|guy|ryan|alex|thomas|jorge|diego|pablo|carlos|jamal|hamed|naayf|shakir|tarik|maged|fred|paul|henri|claude|antoine|stefan|conrad|jan|ravi|hemant|prabhat|ichiro|kangkang|yunyang|yunxi|ivan|pavel|cem|ahmet|filipe|enzo|liam|ahmed|hamdan|salman|raul|luca|killian|connor|sam|christopher|eric|davis|jason|tony|brian|rishi|oliver|william|hugo|matthew|aaron|arthur|gordon|rocko|reed|alvaro|alonso|tomas|duarte|antonio|maarten|dmitry|madhur|keita|injoon|abeo|luke|gerard|ismael|hedi|zahid|michael|nathan|stephan|bruno|cosimo|sergio|jose|juan|miguel|andrei|nicolas|jean|pierre|marc|stefanos|mateo|david";
   var FEMALE_N="female|zira|hazel|susan|samantha|karen|moira|tessa|fiona|victoria|allison|ava|serena|kate|mouna|salma|hoda|zariyah|fatima|amina|reem|jenny|aria|sonia|natasha|neerja|emily|leah|clara|ezinne|denise|sylvie|charline|elvira|dalia|elena|paloma|francisca|raquel|katja|elsa|colette|emel|svetlana|swara|nanami|sunhi|xiaoxiao|huihui|yaoyao|heami|hortense|julie|paulina|helena|laura|sabina|maria|lucia|isabella|amelie|mia|anna|ioana|hedda|ayumi|haruka|sayaka|yuna|joana|luciana|catherine|linda|heather|cortana|zuzana|monica|alice|amelia|carmit|ellen|samira|lekha|kalpana|veena|tian-tian|ting-ting|sin-ji|mei-jia|yelda|milena|katya|irina|yu-shu|kyoko|jessica|michelle|libby|maisie|clarita|eka";
@@ -306,14 +305,16 @@ dialog .pwprice span{font-size:16px;font-weight:500;color:var(--muted);margin-in
   }
   function nBody(){var q=nParams();return {voice:$("voice").value,rate:q.rate,pitch:q.pitch,text:scriptText(),license:licKey}}
   var curAudio=null;
+  var SILENT="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
   function playNeural(){
-    if(curAudio){curAudio.pause();curAudio=null}
+    if(curAudio){curAudio.onpause=curAudio.onended=null;curAudio.pause();curAudio=null}
+    var a=new Audio();a.src=SILENT;try{var up=a.play();if(up&&up.catch)up.catch(function(){})}catch(e){}
     $("st").textContent=T("Loading");
     fetch("/tts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nBody())}).then(function(r){if(r.status===402){showPaywall();throw new Error("subscription required")}if(!r.ok)throw new Error("HTTP "+r.status);return r.blob()}).then(function(b){
-      var a=new Audio(URL.createObjectURL(b));curAudio=a;
+      a.pause();a.src=URL.createObjectURL(b);curAudio=a;
       a.onplay=function(){setState(true)};a.onended=a.onpause=function(){setState(false)};
       return a.play();
-    }).catch(function(e){setState(false);if(e.message==="subscription required")return;$("vnote").textContent="Neural voice failed ("+e.message+"). Make sure server.py is running and you opened http://localhost:8000."});
+    }).catch(function(e){setState(false);if(e.message==="subscription required")return;if(e&&e.name==="NotAllowedError"){$("vnote").textContent="Your browser blocked the sound. Press Play again.";return}$("vnote").textContent="Neural voice failed ("+e.message+"). Make sure server.py is running and you opened http://localhost:8000."});
   }
   function buildNeural(name){
     var base=location.protocol==="file:"?"http://localhost:8000":location.origin;
@@ -352,6 +353,7 @@ dialog .pwprice span{font-size:16px;font-weight:500;color:var(--muted);margin-in
     $("diag").textContent=voices.length+" voices installed. Arabic voices: "+(ar.length?ar.join(", "):"none")+".";
   }
   $("accent").onchange=$("gender").onchange=$("engine").onchange=loadVoices;
+  apply(TPL[0]);
   if(synth){loadVoices();synth.onvoiceschanged=loadVoices;var tries=0,iv=setInterval(function(){if(synth.getVoices().length!==voices.length)loadVoices();if(++tries>12)clearInterval(iv)},500)}else{$("warn").style.display="block"}
   fetch("/health").then(function(r){if(!r.ok)throw 0}).catch(function(){$("engine").value="browser";loadVoices();$("vnote").textContent="Neural server not running, using browser voices. Start it with: python server.py"});
 
@@ -396,7 +398,7 @@ dialog .pwprice span{font-size:16px;font-weight:500;color:var(--muted);margin-in
     setTimeout(function(){if(!started&&!synth.speaking){$("vnote").textContent="Nothing played. This voice may not be installed or may not support this language. Open “Voices found on this device” to see what is available."}},2000);
   }
   $("play").onclick=play;
-  $("stop").onclick=function(){if(synth)synth.cancel();if(curAudio)curAudio.pause();setState(false)};
+  $("stop").onclick=function(){if(synth)synth.cancel();if(curAudio){curAudio.pause()}setState(false)};
 
   function esc(s){return s.replace(/\\/g,"\\\\").replace(/"/g,'\\"').replace(/\n/g," ").replace(/</g,"\\u003c")}
   function build(){
@@ -418,7 +420,7 @@ dialog .pwprice span{font-size:16px;font-weight:500;color:var(--muted);margin-in
 
   $("getpro").onclick=function(){subscribe($("paynote"))};
   function subscribe(n){
-    if(!GUMROAD_URL){n.textContent=T("Checkout isn’t connected yet. This is a preview of the pricing.");return}
+    if(!GUMROAD_URL){n.textContent=T("Checkout isn’t connected yet. This is a preview of the pricing.");try{console.warn("Set GUMROAD_URL in index.html or start server.py with GUMROAD_URL=...")}catch(e){}return}
     var w=null;try{w=window.open(GUMROAD_URL,"_blank")}catch(e){}
     if(w){try{w.opener=null}catch(e){}n.textContent="";return}
     n.textContent="";var a=document.createElement("a");a.href=GUMROAD_URL;a.target="_blank";a.rel="noopener";a.textContent=T("Open checkout");a.style.textDecoration="underline";n.appendChild(a);
@@ -428,8 +430,9 @@ dialog .pwprice span{font-size:16px;font-weight:500;color:var(--muted);margin-in
   function trialUsed(){return trialCount()>=TRIAL_MAX}
   function markTrial(){var n=trialCount()+1;trialMem=n;try{localStorage.setItem("vx-trial",String(n))}catch(e){}}
   var proActive=false,licKey="";
-  function isPro(){return proActive}
-  function showTrial(){$("trial").textContent=isPro()?T("Pro active"):T(trialUsed()?"Free trial used. Subscribe to continue.":(TRIAL_MAX-trialCount()>=2?"Free trial: 2 listens left":"Free trial: 1 listen left"))}
+  var openMode=false;
+  function isPro(){return proActive||openMode}
+  function showTrial(){$("trial").textContent=isPro()?T(openMode&&!proActive?"Test mode: no payment check":"Pro active"):T(trialUsed()?"Free trial used. Subscribe to continue.":(TRIAL_MAX-trialCount()>=2?"Free trial: 2 listens left":"Free trial: 1 listen left"))}
   function showPaywall(){var d=$("paywall");try{d.showModal()}catch(e){d.setAttribute("open","")}}
   function gate(){if(isPro()){trialMode=false;return true}if(trialUsed()){showPaywall();return false}markTrial();trialMode=true;showTrial();return true}
   function scriptText(){var t=$("script").value;return trialMode?t.slice(0,300):t}
@@ -466,7 +469,7 @@ dialog .pwprice span{font-size:16px;font-weight:500;color:var(--muted);margin-in
   $("lang").onchange=function(){setLang(this.value)};
   var savedLang=null;try{savedLang=localStorage.getItem("vx-lang")}catch(e){}
   var nl=(navigator.language||"en").toLowerCase();
-  fetch("/config").then(function(r){return r.json()}).then(function(j){if(j.gumroad_url)GUMROAD_URL=j.gumroad_url}).catch(function(){});
+  fetch("/config").then(function(r){return r.json()}).then(function(j){if(j.gumroad_url)GUMROAD_URL=j.gumroad_url;if(j.enforced===false){openMode=true}showTrial()}).catch(function(){});
   try{var sk=localStorage.getItem("vx-lic");if(sk)activate(sk).then(function(ok){if(ok){licKey=sk;proActive=true;showTrial()}}).catch(function(){})}catch(e){}
   showTrial();
   setLang((savedLang&&savedLang!=="ary"?savedLang:null)||(nl.indexOf("ar")===0?"ar":nl.indexOf("fr")===0?"fr":"en"));
